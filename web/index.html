@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="منصة اكتشاف ومشاهدة الأنمي — اكتشف الجديد، تابع ما تشاهده، وقيم أعمالك المفضلة.">
+  <meta name="theme-color" content="#7C5CFC">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="KOKURO">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>KOKURO — اكتشف الأنمي</title>
+  <link rel="manifest" href="manifest.json">
+
+  <!--
+    Kuro trailer player chrome. Loaded statically from the page (instead of
+    injected at runtime via dart:html) because Dart's innerHtml setter strips
+    <style> tags and DDC's Node.append() can't attach a ScriptElement in
+    debug builds.
+  -->
+  <style>
+    .krvp{position:relative;width:100%;height:100%;background:#000;overflow:hidden;border-radius:16px}
+    .krv-frame{position:absolute;inset:0;width:100%;height:100%;overflow:hidden}
+    .krv-frame iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;pointer-events:none;display:block}
+    .krv-tap{position:absolute;inset:0;z-index:1;cursor:pointer;background:transparent}
+    .krv-center{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;pointer-events:none}
+    .krv-spin{display:none;width:38px;height:38px;border:3px solid rgba(255,255,255,.2);border-top-color:#7C5CFC;border-radius:50%;animation:krvspin .8s linear infinite}
+    @keyframes krvspin{to{transform:rotate(360deg)}}
+    .krv-bigbtn{display:none;pointer-events:auto;width:64px;height:64px;border-radius:50%;border:2px solid rgba(124,92,252,.85);background:rgba(12,10,25,.55);box-shadow:0 0 24px rgba(124,92,252,.55);align-items:center;justify-content:center;color:#fff;cursor:pointer;padding:0}
+    .krv-bigbtn svg{width:32px;height:32px;fill:#fff}
+    .krvp.buff .krv-spin{display:flex}
+    .krvp.stopped .krv-bigbtn{display:flex}
+    .krv-seektip{display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.72);padding:8px 14px;border-radius:8px;color:#fff;font:700 20px/1.2 "Segoe UI",system-ui;pointer-events:none}
+    .krv-seektip.show{display:flex}
+    .krv-chrome{position:absolute;left:0;right:0;bottom:0;z-index:3;padding:12px 12px 8px;background:linear-gradient(to top,rgba(0,0,0,.88),transparent);opacity:1;transition:opacity .2s}
+    .krvp.hide .krv-chrome{opacity:0;pointer-events:none}
+    .krv-seek{display:block;width:100%;margin:0 0 6px;appearance:none;-webkit-appearance:none;height:6px;border-radius:3px;outline:none;cursor:pointer;background:linear-gradient(90deg,#7C5CFC var(--p,0%),rgba(255,255,255,.25) var(--p,0%))}
+    .krv-seek::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid #7C5CFC;box-shadow:0 0 8px rgba(255,255,255,.35)}
+    .krv-seek::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid #7C5CFC}
+    .krv-row{display:flex;align-items:center;gap:4px}
+    .krv-b{flex:0 0 auto;background:transparent;border:0;color:#fff;width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border-radius:8px;padding:0}
+    .krv-b:hover{background:rgba(255,255,255,.15)}
+    .krv-b svg{width:20px;height:20px;fill:currentColor}
+    .krv-skip{display:inline-flex;align-items:center;gap:1px}
+    .krv-skip svg{width:18px;height:18px}
+    .krv-skip span{font:700 9px/1 "Segoe UI",system-ui;color:#fff}
+    .krv-time{color:#fff;font:600 12px/1 "Segoe UI",system-ui;min-width:30px;white-space:nowrap}
+    .krv-total{color:rgba(255,255,255,.65)}
+    .krv-rate{appearance:none;-webkit-appearance:none;background:transparent;color:#fff;border:0;font:700 12px/1 "Segoe UI";cursor:pointer;outline:none;max-width:58px}
+    .krv-rate option{color:#000}
+    .krv-volbox{display:flex;align-items:center}
+    .krv-vol{appearance:none;-webkit-appearance:none;width:0;height:6px;border-radius:3px;background:rgba(255,255,255,.25);opacity:0;transition:all .18s;cursor:pointer;margin:0}
+    .krv-vol::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid #7C5CFC}
+    .krv-vol.source{width:70px;opacity:1;background:linear-gradient(90deg,#7C5CFC var(--v,100%),rgba(255,255,255,.25) var(--v,100%))}
+    .krv-volbox:hover .krv-vol{width:70px;opacity:1;background:linear-gradient(90deg,#7C5CFC var(--v,100%),rgba(255,255,255,.25) var(--v,100%))}
+    /* Episode players: YouTube's own controls stay interactive. */
+    .krvp.ep .krv-epframe{position:absolute;inset:0;width:100%;height:100%}
+    .krvp.ep > iframe{position:absolute;inset:0;width:100%!important;height:100%!important;border:0;display:block;pointer-events:auto}
+  </style>
+</head>
+<body>
+  <!--
+    You can customize the "flutter_bootstrap.js" script.
+    This is useful to provide a custom configuration to the Flutter loader
+    or to give the user feedback during the initialization process.
+
+    For more details:
+    * https://docs.flutter.dev/platform-integration/web/initialization
+  -->
+
+  <!--
+    Kuro trailer JS bridge. Creates the official YouTube IFrame API player
+    (YT.Player) inside the container div that Dart renders via HtmlElementView.
+    Dart <-> bridge talk over window.postMessage using the 'kuro' channel.
+  -->
+  <script>
+    (function () {
+      if (window.__kuroBridge) return;
+      window.__kuroBridge = true;
+      window.__kuroPlayers = {};
+      window.__kuroQueue = [];
+      window.__kuroAttempted = {};
+      window.__kuroConfig = {};
+      var STATES = {'-1': 'unstarted', 0: 'ended', 1: 'playing', 2: 'paused', 3: 'buffering', 5: 'cued'};
+      var apiLoading = false;
+
+      function post(vt, info) {
+        window.postMessage(JSON.stringify({
+          'channel': 'kuro', 'viewType': vt, 'event': 'infoDelivery', 'info': info
+        }), '*');
+      }
+
+      // A player is described by its attach config:
+      //   {videoId}                  -> fixed video (trailers)
+      //   {query, controls:true}     -> YouTube search embed (episodes)
+      //   {containerId}              -> DOM element to mount into
+      // Falls back to the legacy 'kuro-trailer-<videoId>' scheme.
+      function attach(vt) {
+        if (window.__kuroPlayers[vt]) return true;
+        if (window.__kuroAttempted[vt]) return true;
+        if (!(window.YT && window.YT.Player)) return false;
+        var cfg = window.__kuroConfig[vt] || {};
+        var vid = cfg.videoId;
+        if (!vid && !cfg.query) vid = vt.substring('kuro-trailer-'.length);
+        var el = document.getElementById(cfg.containerId || ('kuro-player-' + vid));
+        if (!el) return false;
+        try {
+          var playerVars = {
+            'autoplay': 1, 'mute': 1,
+            'controls': cfg.controls ? 1 : 0,
+            'rel': 0, 'modestbranding': 1, 'iv_load_policy': 3,
+            'playsinline': 1, 'enablejsapi': 1,
+            'origin': window.location.origin
+          };
+          if (cfg.query) {
+            playerVars.listType = 'search';
+            playerVars.list = cfg.query;
+          }
+          var options = {
+            width: '100%',
+            height: '100%',
+            playerVars: playerVars,
+            events: {
+              'onReady': function () {
+                window.__kuroPlayers[vt] = p;
+                post(vt, {'playerState': 'cued', 'currentTime': 0, 'duration': 0});
+              },
+              'onStateChange': function (e) {
+                try {
+                  post(vt, {
+                    'currentTime': p.getCurrentTime(),
+                    'duration': p.getDuration() || 0,
+                    'playerState': STATES[e.data] || 'unstarted'
+                  });
+                } catch (err) {}
+              },
+              'onError': function (e) {
+                console.log('[kuro] YT error ' + e.data);
+                window.postMessage(JSON.stringify({
+                  'channel': 'kuro', 'viewType': vt, 'event': 'playerError', 'code': e.data
+                }), '*');
+              }
+            }
+          };
+          if (!cfg.query && vid) options.videoId = vid;
+          var p = new YT.Player(el, options);
+          window.__kuroAttempted[vt] = true;
+          return true;
+        } catch (err) {
+          console.log('[kuro] attach error', err);
+          delete window.__kuroAttempted[vt];
+          return false;
+        }
+      }
+      function loadApi() {
+        if (window.YT && window.YT.Player || apiLoading) return;
+        apiLoading = true;
+        var s = document.createElement('script');
+        s.src = 'https://www.youtube.com/iframe_api';
+        s.onerror = function () { apiLoading = false; };
+        document.head.appendChild(s);
+      }
+
+      window.onYouTubeIframeAPIReady = function () { loadApi(); };
+
+      window.addEventListener('message', function (e) {
+        var raw = e.data;
+        if (typeof raw !== 'string') return;
+        var d = null;
+        try { d = JSON.parse(raw); } catch (err) { return; }
+        if (!d || d.channel !== 'kuro') return;
+        var vt = d.viewType;
+        if (d.event === 'ping') {
+          window.postMessage(JSON.stringify({
+            'channel': 'kuro', 'viewType': '*', 'event': 'bridgeReady'
+          }), '*');
+          return;
+        }
+        if (d.event === 'attach') {
+          window.__kuroConfig[vt] = d.config || {};
+          if (window.__kuroQueue.indexOf(vt) === -1) window.__kuroQueue.push(vt);
+          loadApi();
+          attach(vt);
+          return;
+        }
+        if (d.event === 'dispose') {
+          var oldp = window.__kuroPlayers[vt];
+          if (oldp && typeof oldp.destroy === 'function') {
+            try { oldp.destroy(); } catch (err) {}
+          }
+          delete window.__kuroPlayers[vt];
+          delete window.__kuroConfig[vt];
+          delete window.__kuroAttempted[vt];
+          return;
+        }
+        var p = window.__kuroPlayers[vt];
+        if (!p) return;
+        if (d.event === 'command') {
+          var f = p[d.func];
+          if (typeof f === 'function') {
+            try { f.apply(p, d.args || []); } catch (err) {}
+          }
+        }
+      });
+
+      setInterval(function () {
+        // Keep retrying unresolved attachments until DOM + API are ready.
+        var still = [];
+        for (var i = 0; i < window.__kuroQueue.length; i++) {
+          if (!attach(window.__kuroQueue[i])) still.push(window.__kuroQueue[i]);
+        }
+        window.__kuroQueue = still;
+        // Push the player's real position/duration/state ~4x per second.
+        for (var vt in window.__kuroPlayers) {
+          var p = window.__kuroPlayers[vt];
+          if (!p || typeof p.getCurrentTime !== 'function') continue;
+          try {
+            var s = (typeof p.getPlayerState === 'function') ? p.getPlayerState() : 2;
+            post(vt, {
+              'currentTime': p.getCurrentTime(),
+              'duration': p.getDuration() || 0,
+              'playerState': STATES[s] || 'unstarted'
+            });
+          } catch (err) {}
+        }
+      }, 250);
+
+      // Handshake: lets Dart confirm a live bridge even before a player exists.
+      window.postMessage(JSON.stringify({
+        'channel': 'kuro', 'viewType': '*', 'event': 'bridgeReady'
+      }), '*');
+    })();
+  </script>
+
+  <script src="flutter_bootstrap.js" async></script>
+
+  <script>
+    // KOKURO PWA: register the service worker in secure contexts only,
+    // and tell the app when a new build has taken control.
+    if ('serviceWorker' in navigator && window.isSecureContext) {
+      window.addEventListener('load', function () {
+        var hadController = !!navigator.serviceWorker.controller;
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (hadController) {
+            window.dispatchEvent(new CustomEvent('kokuro:update-available'));
+          }
+          hadController = true;
+        });
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      });
+    }
+  </script>
+</body>
+</html>
