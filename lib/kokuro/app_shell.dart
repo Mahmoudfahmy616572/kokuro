@@ -2,34 +2,11 @@ import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'active_branch_scope.dart';
 import 'app_strings.dart';
 import 'kokuro_bloc.dart';
 import 'tokens.dart';
 import 'user_profile.dart';
-
-/// Exposes which shell tab is currently active so each branch can mute its
-/// animations when it is NOT the visible tab. The StatefulShellRoute keeps
-/// every branch alive (IndexedStack), so [TickerMode] must be applied
-/// per-screen against this value — otherwise the genre constellation, hero
-/// rotation and shimmer burn frames in background tabs.
-class ActiveBranchScope extends InheritedWidget {
-  final int index;
-
-  const ActiveBranchScope({
-    super.key,
-    required this.index,
-    required super.child,
-  });
-
-  static ActiveBranchScope? maybeOf(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<ActiveBranchScope>();
-
-  bool isActive(int branchIndex) => branchIndex == index;
-
-  @override
-  bool updateShouldNotify(ActiveBranchScope oldWidget) =>
-      oldWidget.index != index;
-}
 
 class AppShell extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
@@ -60,12 +37,17 @@ class _AppShellState extends State<AppShell> {
   /// running — surfaced as a "new version available" banner with a reload.
   bool _updateAvailable = false;
 
+  /// True while the browser offers a deferred PWA install prompt — surfaced
+  /// as a "install the app" banner with an install action.
+  bool _installReady = false;
+
   @override
   void initState() {
     super.initState();
     _activeIndex = widget.navigationShell.currentIndex;
     _loadProfile();
     _listenForUpdates();
+    _listenForInstall();
   }
 
   void _listenForUpdates() {
@@ -74,6 +56,22 @@ class _AppShellState extends State<AppShell> {
       if (!mounted) return;
       setState(() => _updateAvailable = true);
     });
+  }
+
+  void _listenForInstall() {
+    if (html.window.isSecureContext != true) return;
+    html.window.addEventListener('kokuro:install-ready', (_) {
+      if (!mounted) return;
+      setState(() => _installReady = true);
+    });
+    html.window.addEventListener('kokuro:installed', (_) {
+      if (!mounted) return;
+      setState(() => _installReady = false);
+    });
+  }
+
+  void _promptInstall() {
+    html.window.dispatchEvent(html.Event('kokuro:install-request'));
   }
 
   void _reloadForUpdate() => html.window.location.reload();
@@ -126,6 +124,7 @@ class _AppShellState extends State<AppShell> {
       body: Column(
         children: [
           if (_updateAvailable) _buildUpdateBanner(),
+          if (_installReady) _buildInstallBanner(),
           _buildTopNav(),
           Expanded(
             child: ActiveBranchScope(
@@ -164,6 +163,34 @@ class _AppShellState extends State<AppShell> {
               visualDensity: VisualDensity.compact,
             ),
             child: Text(AppStrings.updateNow),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInstallBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: K.s16, vertical: K.s8),
+      color: K.cyan.withValues(alpha: 0.10),
+      child: Row(
+        children: [
+          const Icon(Icons.download_rounded, size: 18),
+          const SizedBox(width: K.s8),
+          Expanded(
+            child: Text(
+              AppStrings.installPrompt,
+              style: K.bodySmall.copyWith(color: K.textPrimary),
+            ),
+          ),
+          TextButton(
+            onPressed: _promptInstall,
+            style: TextButton.styleFrom(
+              foregroundColor: K.cyan,
+              visualDensity: VisualDensity.compact,
+            ),
+            child: Text(AppStrings.installNow),
           ),
         ],
       ),

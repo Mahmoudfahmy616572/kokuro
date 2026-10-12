@@ -21,6 +21,16 @@
   <meta name="description" content="منصة اكتشاف ومشاهدة الأنمي — اكتشف الجديد، تابع ما تشاهده، وقيم أعمالك المفضلة.">
   <meta name="theme-color" content="#7C5CFC">
 
+  <!-- Open Graph / SEO -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="KOKURO — اكتشف الأنمي">
+  <meta property="og:description" content="منصة اكتشاف ومشاهدة الأنمي — اكتشف الجديد، تابع ما تشاهده، وقيم أعمالك المفضلة.">
+  <meta property="og:image" content="icons/Icon-512.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="KOKURO — اكتشف الأنمي">
+  <meta name="twitter:description" content="منصة اكتشاف ومشاهدة الأنمي — اكتشف الجديد، تابع ما تشاهده، وقيم أعمالك المفضلة.">
+  <meta name="twitter:image" content="icons/Icon-512.png">
+
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -270,6 +280,28 @@
         navigator.serviceWorker.register('sw.js').catch(function () {});
       });
     }
+
+    // KOKURO PWA install: surface a "install app" banner when the browser
+    // offers a deferred install prompt, and let Dart trigger it on demand.
+    (function () {
+      var deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        window.dispatchEvent(new CustomEvent('kokuro:install-ready'));
+      });
+      window.addEventListener('appinstalled', function () {
+        deferredPrompt = null;
+        window.dispatchEvent(new CustomEvent('kokuro:installed'));
+      });
+      window.addEventListener('kokuro:install-request', function () {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function () {
+          deferredPrompt = null;
+        }).catch(function () {});
+      });
+    })();
   </script>
 </body>
 </html>

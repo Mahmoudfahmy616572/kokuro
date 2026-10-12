@@ -11,7 +11,7 @@ import 'genre_web_layout.dart';
 import 'components.dart';
 import 'kokuro_bloc.dart';
 import 'loading_widgets.dart';
-import 'app_shell.dart';
+import 'active_branch_scope.dart';
 import 'app_strings.dart';
 import 'anime_animations.dart';
 import 'search_history.dart';

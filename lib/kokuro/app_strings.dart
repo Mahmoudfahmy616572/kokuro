@@ -91,6 +91,9 @@ class AppStrings {
   static const String navigateExternal = 'فتح في المتصفح';
   static const String updateAvailable = 'نسخة جديدة من كوكورو متاحة.';
   static const String updateNow = 'تحديث الآن';
+  static const String installPrompt =
+      'ثبّت كوكورو على جهازك للوصول السريع من الشاشة الرئيسية.';
+  static const String installNow = 'تثبيت';
   static const String ofTotalEpisodes = 'من إجمالي';
 
   // ── Detail Screen — AT A GLANCE ──────────────────────────
