@@ -1,3 +1,7 @@
+// ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
+// This app is a Flutter-web PWA; dart:html powers the SW install/update
+// bridge (app-install prompt + reload-on-new-version) which has no
+// package:web fallback that works from the same codebase.
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
