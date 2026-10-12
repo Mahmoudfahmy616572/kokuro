@@ -94,7 +94,11 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen>
       floatingActionButton: _buildFab(),
       body: BlocBuilder<KokuroBloc, KokuroState>(
         builder: (context, state) {
-          if (state is DetailLoaded) {
+          // Only react to THIS anime's detail. After pushing a related anime
+          // (detail → detail) the shared bloc flips to the OTHER anime's
+          // DetailLoaded; without this guard the screen underneath would
+          // repaint as the wrong title and stay wrong when the route pops.
+          if (state is DetailLoaded && state.anime.malId == widget.animeId) {
             // Cache for refresh/retry so a reload never blank-screens.
             _lastDetail = state;
             // Translate synopsis to Arabic if not already done.
@@ -226,7 +230,7 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen>
       backgroundColor: K.accent,
       foregroundColor: Colors.white,
       elevation: 6,
-      heroTag: 'detail-watch-fab',
+      heroTag: 'detail-watch-fab-${widget.animeId}',
       icon: const Icon(Icons.play_arrow_rounded),
       label: Text(
         state.watchedEpisodes >= state.anime.episodes &&
@@ -1030,8 +1034,9 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen>
         itemBuilder: (_, i) {
           final char = characters[i];
           return GestureDetector(
-            onTap: () {
-              context.push('/character/${char.malId}');
+            onTap: () async {
+              await context.push('/character/${char.malId}');
+              if (mounted) _refreshDetail();
             },
             child: Column(
               children: [
@@ -1673,8 +1678,9 @@ class _AnimeDetailScreenState extends State<AnimeDetailScreen>
       itemBuilder: (_, i) {
         final anime = related[i];
         return GestureDetector(
-          onTap: () {
-            context.push('/anime/${anime.malId}', extra: anime);
+          onTap: () async {
+            await context.push('/anime/${anime.malId}', extra: anime);
+            if (mounted) _refreshDetail();
           },
           child: Container(
             padding: const EdgeInsets.symmetric(

@@ -1109,11 +1109,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
               final character = characters[index];
               return _CharacterResultCard(
                 character: character,
-                onTap: () {
-                  context.push(
+                onTap: () async {
+                  await context.push(
                     '/character/${character.malId}',
                     extra: character,
                   );
+                  if (mounted) _refresh();
                 },
               );
             },
@@ -1124,8 +1125,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  void _openDetail(Anime anime) {
-    context.push('/anime/${anime.malId}', extra: anime);
+  void _openDetail(Anime anime) async {
+    await context.push('/anime/${anime.malId}', extra: anime);
+    if (mounted) _refresh();
   }
 }
 

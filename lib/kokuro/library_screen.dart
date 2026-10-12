@@ -125,6 +125,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
     return Future<void>.delayed(const Duration(seconds: 1));
   }
 
+  /// Opens a title and reloads the library when the detail route pops so a
+  /// status/progress change made inside is reflected on the list behind it.
+  Future<void> _openDetail(LibraryEntry entry) async {
+    await context.push('/anime/${entry.anime.malId}', extra: entry.anime);
+    if (mounted) context.read<KokuroBloc>().add(const LoadLibrary());
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -305,10 +312,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
               children: [
                 for (final item in items.take(3))
                   InkWell(
-                    onTap: () => context.push(
-                      '/anime/${item.entry.anime.malId}',
-                      extra: item.entry.anime,
-                    ),
+                    onTap: () => _openDetail(item.entry),
                     borderRadius: BorderRadius.circular(K.r8),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: K.s8),
@@ -695,10 +699,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   ? AppStrings.rewatch
                   : AppStrings.continueWatching,
               color: K.accent,
-              onTap: () => context.push(
-                '/anime/${entry.anime.malId}',
-                extra: entry.anime,
-              ),
+              onTap: () => _openDetail(entry),
             ),
             const SizedBox(width: K.s6),
             _IconAction(

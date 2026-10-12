@@ -343,7 +343,12 @@ class _AppShellState extends State<AppShell> {
           for (final item in upcoming.take(5))
             PopupMenuItem<String>(
               height: 56,
-              onTap: () => context.push('/anime/${item.id}'),
+              onTap: () async {
+                await context.push('/anime/${item.id}');
+                if (mounted) {
+                  context.read<KokuroBloc>().add(const LoadLibrary());
+                }
+              },
               child: Row(
                 children: [
                   Container(

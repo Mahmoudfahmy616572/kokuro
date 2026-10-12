@@ -366,9 +366,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openDetail(BuildContext context, Anime anime) async {
-    // No re-fetch on the way back — home keeps its cached data, so
-    // back-navigation is instant instead of re-running the fetch chain.
+    // Re-fetch home once the detail route pops so the page the user lands
+    // back on reflects anything that changed (watch status, list membership)
+    // instead of showing the stale snapshot taken before the push.
     await context.push('/anime/${anime.malId}', extra: anime);
+    if (context.mounted) context.read<KokuroBloc>().add(const LoadHome());
   }
 
   Widget _buildLoadingSkeleton() {
