@@ -51,7 +51,10 @@ class ImageDiagOverlay extends StatelessWidget {
                     ...imageDiagLog.map(
                       (l) => Text(
                         l,
-                        style: const TextStyle(color: Colors.white, fontSize: 9),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                        ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
