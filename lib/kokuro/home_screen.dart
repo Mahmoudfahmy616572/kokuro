@@ -366,11 +366,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openDetail(BuildContext context, Anime anime) async {
-    // Re-fetch home once the detail route pops so the page the user lands
-    // back on reflects anything that changed (watch status, list membership)
-    // instead of showing the stale snapshot taken before the push.
+    // Refresh the user-owned parts of home (watchlist membership, journey,
+    // continue-watching) once the detail route pops. This is a local-storage
+    // snapshot update — NOT a full network reload — so the page reflects any
+    // watch-status change without re-hammering Jikan's rate limit (which used
+    // to make home fall back to an image host and blank every poster).
     await context.push('/anime/${anime.malId}', extra: anime);
-    if (context.mounted) context.read<KokuroBloc>().add(const LoadHome());
+    if (context.mounted) {
+      context.read<KokuroBloc>().add(const RefreshHomeSnapshot());
+    }
   }
 
   Widget _buildLoadingSkeleton() {

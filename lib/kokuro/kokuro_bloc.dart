@@ -21,6 +21,16 @@ class LoadHome extends KokuroEvent {
   const LoadHome();
 }
 
+/// Refreshes only the user-owned data on the home screen (watchlist
+/// membership, journey + continue-watching) using local storage — no network,
+/// no refetch of the list feeds. Used after a pushed detail route pops so the
+/// home page reflects any watch-status change without re-hammering Jikan's
+/// rate limit (which previously fell back to an image host the client could
+/// fail to reach, blanking every poster).
+class RefreshHomeSnapshot extends KokuroEvent {
+  const RefreshHomeSnapshot();
+}
+
 class LoadExplore extends KokuroEvent {
   final String? genre;
   final String? season;
@@ -471,9 +481,11 @@ class KokuroBloc extends Bloc<KokuroEvent, KokuroState> {
   final AnimeRepository _repo;
   static const _pageSize = 24;
   bool _genreCountsLoading = false;
+  HomeLoaded? _lastHome;
 
   KokuroBloc({required this._repo}) : super(KokuroInitial()) {
     on<LoadHome>(_onLoadHome);
+    on<RefreshHomeSnapshot>(_onRefreshHomeSnapshot);
     on<LoadExplore>(_onLoadExplore);
     on<LoadMoreExplore>(_onLoadMoreExplore);
     on<LoadDetail>(_onLoadDetail);
@@ -647,22 +659,59 @@ class KokuroBloc extends Bloc<KokuroEvent, KokuroState> {
     }
     final dailyPick = pool.isNotEmpty ? pool[dayOfYear % pool.length] : null;
 
+    _lastHome = HomeLoaded(
+      featured: featured,
+      trending: trending,
+      seasonAnime: seasonAnime,
+      journey: journey,
+      continueWatching: continueWatching.take(4).toList(),
+      dailyPick: dailyPick,
+      upcoming: upcomingClean,
+      movies: moviesClean,
+      spotlightGenre: spotlightTitles.isEmpty ? null : spotlightGenre,
+      spotlightTitles: spotlightTitles,
+      recommendedForYou: recommendedForYou,
+      recommendedSeedTitle: recommendedSeedTitle,
+      topRated: topChart,
+      watchlistIds: watchlist.map((a) => a.malId).toSet(),
+    );
+    emit(_lastHome!);
+  }
+
+  /// Re-emits the home screen using the last fetched snapshot — user-owned
+  /// bits (watchlist membership, journey, continue-watching) are re-read from
+  /// local storage so a watch-status change made on a detail route is visible
+  /// the moment the user navigates back. The remote list feeds and their image
+  /// URLs are intentionally NOT refetched: re-hitting Jikan's 3 req/s limit in
+  /// .wait-parallel on every back was the regression that downed every poster.
+  Future<void> _onRefreshHomeSnapshot(
+    RefreshHomeSnapshot event,
+    Emitter<KokuroState> emit,
+  ) async {
+    final last = _lastHome;
+    if (last == null) {
+      add(const LoadHome());
+      return;
+    }
+
+    // Local-only reads (no HTTP) — the list feeds and artwork stay untouched.
+    final watchlistResult = await _repo.getWatchlist();
+    final libraryResult = await _repo.getLibrary();
+    final watchlist = watchlistResult.fold((_) => <Anime>[], (r) => r);
+    final library = libraryResult.fold((_) => <LibraryEntry>[], (r) => r);
+    final continueWatching =
+        library.where((e) => e.watchedEpisodes > 0 && !e.isCompleted).toList()
+          ..sort(
+            (a, b) => (b.updatedAt?.millisecondsSinceEpoch ?? 0).compareTo(
+              a.updatedAt?.millisecondsSinceEpoch ?? 0,
+            ),
+          );
+
     emit(
-      HomeLoaded(
-        featured: featured,
-        trending: trending,
-        seasonAnime: seasonAnime,
-        journey: journey,
-        continueWatching: continueWatching.take(4).toList(),
-        dailyPick: dailyPick,
-        upcoming: upcomingClean,
-        movies: moviesClean,
-        spotlightGenre: spotlightTitles.isEmpty ? null : spotlightGenre,
-        spotlightTitles: spotlightTitles,
-        recommendedForYou: recommendedForYou,
-        recommendedSeedTitle: recommendedSeedTitle,
-        topRated: topChart,
+      last.copyWith(
         watchlistIds: watchlist.map((a) => a.malId).toSet(),
+        journey: watchlist.take(4).toList(),
+        continueWatching: continueWatching.take(4).toList(),
       ),
     );
   }
