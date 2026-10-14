@@ -12,6 +12,7 @@ import 'kokuro/app_router.dart';
 import 'kokuro/kokuro_bloc.dart';
 import 'kokuro/kokuro_theme.dart';
 import 'kokuro/tokens.dart';
+import 'kokuro/image_diag.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,6 +69,12 @@ class _KokuroAppState extends State<KokuroApp> {
               GlobalCupertinoLocalizations.delegate,
             ],
             supportedLocales: const [Locale('ar', 'EG'), Locale('en', 'US')],
+            builder: (context, child) => Stack(
+              children: [
+                child ?? const SizedBox.shrink(),
+                const ImageDiagOverlay(),
+              ],
+            ),
           );
         },
       ),

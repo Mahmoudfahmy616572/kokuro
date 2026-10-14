@@ -4,6 +4,7 @@ import '../domain/entities/watch_status.dart';
 import 'app_strings.dart';
 import 'tokens.dart';
 import 'loading_widgets.dart';
+import 'image_diag.dart';
 
 // ══════════════════════════════════════════════════════════
 //  KuroImg — cached network image with a themed placeholder and
@@ -91,8 +92,10 @@ class KuroImg extends StatelessWidget {
                 width: width ?? double.infinity,
                 height: height ?? double.infinity,
               ),
-          errorWidget: (_, _, _) =>
-              error ?? _fallback(Icons.image_not_supported_outlined),
+          errorWidget: (_, url, err) {
+            recordImageFailure(url, err);
+            return error ?? _fallback(Icons.image_not_supported_outlined);
+          },
         );
       },
     );
